@@ -1,0 +1,28 @@
+# Postgres + pgvector for deployment. Local dev uses SQLite by default
+# (see README) — this compose file is for the real deployment target only.
+# NOTE: do NOT use Render's free Postgres for this (30-day trial).
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: campusguide
+      POSTGRES_PASSWORD: campusguide
+      POSTGRES_DB: campusguide
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+  api:
+    build: .
+    environment:
+      DATABASE_URL: postgresql+psycopg2://campusguide:campusguide@db:5432/campusguide
+      JWT_SECRET: ${JWT_SECRET:-change-me-to-a-long-random-secret}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    command: uvicorn backend.app:app --host 0.0.0.0 --port 8000
+
+volumes:
+  pgdata:
